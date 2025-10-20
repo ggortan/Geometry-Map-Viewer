@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ferramentas de Mapas e Conversores</title>
+        <meta name="description" content="Ferramenta online para converter entre formatos de polígonos, multipolígonos e multipoints, concatenar multipolígonos e visualizar no mapa." />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <link rel="stylesheet" href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" />
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="toast-container"></div>
+        
+        <!-- Main App Container -->
+        <div class="app-container">
+            <!-- Header -->
+            <div class="app-header">
+                <div>
+                    <h1><i class="fas fa-map-marked-alt"></i> Ferramentas de Mapas</h1>
+                    <small>Conversor de Polígonos e Visualizador de Mapas</small>
+                </div>
+                <div>
+                    <button id="helpBtn" class="btn btn-outline-light btn-sm" title="Ajuda e Exemplos">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Map Container -->
+                <div class="map-container">
+                    <div id="map"></div>
+                    
+                    <!-- Sidebar Toggle Button (floating) -->
+                    <button id="sidebarFloatingToggle" class="btn btn-primary sidebar-floating-toggle" style="display: none;" title="Mostrar barra lateral">
+                        <i class="fas fa-layer-group"></i>
+                    </button>
+                    
+                    <!-- Converter Toggle Button -->
+                    <button id="converterToggleBtn" class="btn btn-primary converter-toggle-btn">
+                        <i class="fas fa-chevron-up"></i> Abrir Conversores
+                    </button>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <div class="sidebar-resize-handle" title="Arraste para redimensionar"></div>
+                    <div class="sidebar-header">
+                        <h5><i class="fas fa-layer-group"></i> Camadas no Mapa</h5>
+                        <div class="sidebar-actions">
+                            <button id="sidebarToggleBtn" class="btn btn-outline-secondary btn-sm" title="Esconder barra lateral">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button id="addLayerManualBtn" class="btn btn-success btn-sm" title="Adicionar camada manualmente">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <div class="settings-dropdown">
+                                <button id="settingsBtn" class="settings-btn" title="Configurações">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div id="settingsMenu" class="settings-menu">
+                                    <button id="saveLayersBtn" title="Salvar camadas no navegador">
+                                        <i class="fas fa-save"></i> Salvar Camadas
+                                    </button>
+                                    <button id="exportLayersBtn" title="Exportar camadas como arquivo">
+                                        <i class="fas fa-file-export"></i> Exportar
+                                    </button>
+                                    <button id="importLayersBtn" title="Importar camadas de arquivo">
+                                        <i class="fas fa-file-import"></i> Importar
+                                    </button>
+                                    <hr class="settings-divider">
+                                    <button id="toggleNotificationsBtn" title="Alternar avisos de notificação">
+                                        <i class="fas fa-bell"></i> <span>Desabilitar Avisos</span>
+                                    </button>
+                                    <button id="clearAllDataBtn" title="Limpar todos os dados e configurações" class="text-danger">
+                                        <i class="fas fa-trash-alt"></i> Limpar Tudo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sidebar-content">
+                        <ul id="layer-list" class="list-group"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Converter Panel (Collapsible) -->
+            <div id="converterPanel" class="converter-panel" style="height: 50vh;">
+                <div class="resize-handle"></div>
+                <div class="converter-header">
+                    <h5><i class="fas fa-exchange-alt"></i> Conversores de Geometria</h5>
+                    <div class="converter-header-actions">
+                        <button class="btn btn-sm btn-light" onclick="document.getElementById('converterPanel').classList.remove('show'); document.getElementById('converterToggleBtn').querySelector('i').classList.replace('fa-chevron-down', 'fa-chevron-up');">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="converter-content">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="conversionType" class="form-label">Tipo de Conversão:</label>
+                            <select class="form-select" id="conversionType">
+                                <optgroup label="Manipular WKT">
+                                    <option value="polygonsToMultipolygon">Polígonos para Multipolígono</option>
+                                    <option value="multipolygonToPolygons">Multipolígono para Polígonos</option>
+                                    <option value="multipointToMultipolygon">Multipoint para Multipolygon</option>
+                                    <option value="concatenateMultipolygons">Concatenar Multipolígonos</option>
+                                    <option value="concatenateMultipoints">Concatenar Multipoints</option>
+                                </optgroup>
+                                <optgroup label="Conversão de Tipos">
+                                    <option value="wktToGeojson">WKT para GeoJSON</option>
+                                    <option value="geojsonToWkt">GeoJSON para WKT</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="addSTGeomFromText" />
+                                <label class="form-check-label" for="addSTGeomFromText"> 
+                                    <i class="fas fa-code"></i> Adicionar SELECT ST_GeomFromText 
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="converter-form-row">
+                        <div>
+                            <label for="inputText" class="form-label"><i class="fas fa-sign-in-alt"></i> Entrada:</label>
+                            <textarea class="form-control" id="inputText" rows="4" placeholder="Cole seu texto aqui..."></textarea>
+                        </div>
+                        <div>
+                            <label for="outputText" class="form-label"><i class="fas fa-sign-out-alt"></i> Saída:</label>
+                            <textarea class="form-control" id="outputText" rows="4" readonly></textarea>
+                        </div>
+                    </div>
+                    <div class="converter-actions">
+                        <button id="convertBtn" class="btn btn-primary"><i class="fas fa-cog"></i> Converter</button>
+                        <button id="clearBtn" class="btn btn-secondary"><i class="fas fa-eraser"></i> Limpar</button>
+                        <button id="fixed-copy-btn" class="btn btn-success"><i class="fas fa-clipboard"></i> Copiar Resultado</button>
+                        <button id="addLayerBtn" class="btn btn-info"><i class="fas fa-plus"></i> Adicionar como camada</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Libraries -->
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/wicket/wicket.js"></script>
+        <script src="https://unpkg.com/wicket/wicket-leaflet.js"></script>
+        <script src="https://unpkg.com/shapefile@0.6.6/dist/shapefile.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        
+        <!-- Help Modal -->
+        <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="helpModalLabel">
+                            <i class="fas fa-info-circle text-primary"></i> Ajuda e Exemplos
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-map-marked-alt text-success"></i> Como Usar a Aplicação</h6>
+                                <div class="help-section">
+                                    <h6>Visualizar no Mapa</h6>
+                                    <ul>
+                                        <li>Adicione camadas usando o botão <span class="badge bg-success">+</span></li>
+                                        <li>Clique em uma camada para centralizar no mapa</li>
+                                        <li>Use os controles para alterar cor, opacidade e visibilidade</li>
+                                        <li>Arraste camadas para reordenar</li>
+                                    </ul>
+                                    
+                                    <h6>Converter Geometrias</h6>
+                                    <ul>
+                                        <li>Abra os conversores com o botão na parte inferior</li>
+                                        <li>Cole suas geometrias no campo "Entrada"</li>
+                                        <li>Escolha o tipo de conversão desejada</li>
+                                        <li>Clique em "Converter" e depois "Adicionar como camada"</li>
+                                    </ul>
+                                    
+                                    <h6>Salvar/Carregar</h6>
+                                    <ul>
+                                        <li>Use o menu ⋮ para salvar, exportar ou importar camadas</li>
+                                        <li>Dados são salvos automaticamente no navegador</li>
+                                        <li>Exporte como JSON para backup</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Exemplos de Camadas</h6>
+                                <div class="help-section">
+                                    <p class="text-muted">Clique no botão abaixo para adicionar camadas de exemplo em São Paulo:</p>
+                                    
+                                    <div class="example-buttons mb-3">
+                                        <button id="addExampleLayers" class="btn btn-outline-primary btn-sm mb-2">
+                                            <i class="fas fa-plus-circle"></i> Adicionar camadas de exemplo
+                                        </button>
+                                    </div>
+                                    
+                                    <h6>Exemplos de Conversões</h6>
+                                    <p class="text-muted">Experimente diferentes tipos de conversão:</p>
+                                    <div class="d-grid gap-2">
+                                        <button id="examplePolygonToMulti" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-draw-polygon"></i> Polígonos para Multipolígono
+                                        </button>
+                                        <button id="exampleMultiToPolygon" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-expand-arrows-alt"></i> Multipolígono para Polígonos
+                                        </button>
+                                        <button id="exampleWktToGeojson" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-code"></i> WKT para GeoJSON
+                                        </button>
+                                        <button id="exampleGeojsonToWkt" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-file-code"></i> GeoJSON para WKT
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer d-flex flex-row w-100 justify-content-between align-items-center">
+                        <div class="d-flex flex-column align-items-start">
+                            <div class="d-flex align-items-center">
+                                <span>Criado por Gabriel Gortan</span>
+                                <a href="https://github.com/ggortan/geometrymapviewer" target="_blank" rel="noopener" class="ms-2 text-dark" title="GitHub">
+                                    <i class="fab fa-github fa-lg"></i>
+                                </a>
+                                <a href="https://linkedin.com/in/gabrielgortan" target="_blank" rel="noopener" class="ms-2 text-primary" title="LinkedIn">
+                                    <i class="fab fa-linkedin fa-lg"></i>
+                                </a>
+                            </div>
+                            <span class="text-muted small">Versão: 2.0.3</span>
+                        </div>
+                        <button type="button" class="btn btn-secondary ms-2" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Script -->
+        <script src="script.js"></script>
+    </body>
+</html>
