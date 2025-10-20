@@ -1769,9 +1769,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!isSidebarResizing) return;
             const dx = e.clientX - startSidebarX;
             let newWidth = startSidebarWidth - dx; // Invertido: arrastar esquerda aumenta, direita diminui
-            newWidth = Math.max(280, Math.min(600, newWidth));
+            newWidth = Math.max(350, Math.min(600, newWidth));
             sidebar.style.width = newWidth + 'px';
             sidebar.style.minWidth = newWidth + 'px';
+            // Ajustar painel de conversores enquanto redimensiona
+            adjustConverterForSidebar();
         });
         document.addEventListener('mouseup', function() {
             if (isSidebarResizing) {
@@ -1779,6 +1781,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.body.style.cursor = '';
                 // Save UI settings after resize
                 saveUISettings();
+                // Ajuste final do painel de conversores
+                adjustConverterForSidebar();
             }
         });
     }
@@ -2174,7 +2178,10 @@ document.addEventListener("DOMContentLoaded", function () {
             converterToggle.querySelector("i").classList.toggle("fa-chevron-up");
             converterToggle.querySelector("i").classList.toggle("fa-chevron-down");
             // Save UI settings after toggle
-            setTimeout(() => saveUISettings(), 100);
+            setTimeout(() => {
+                saveUISettings();
+                adjustConverterForSidebar();
+            }, 100);
         });
     }
 
@@ -2251,7 +2258,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 loadLayersFromLocalStorage();
             }
             loadUISettings();
+            // Ajusta posição do painel de conversores após carregar configurações
+            setTimeout(() => adjustConverterForSidebar(), 120);
         }, 500);
+    });
+
+    // Ajustar posição quando a janela é redimensionada
+    window.addEventListener('resize', function() {
+        adjustConverterForSidebar();
     });
 
     // Auto-save events (silent with debounce)
@@ -2324,8 +2338,32 @@ function toggleSidebar() {
         sidebarToggleBtn.title = 'Mostrar barra lateral';
     }
     
+    // Ajustar posição do painel de conversores para não sobrepor a sidebar
+    adjustConverterForSidebar();
     // Salvar estado da UI
     saveUISettings();
+}
+
+// Ajusta o painel de conversores para respeitar a largura da sidebar
+function adjustConverterForSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const converter = document.getElementById('converterPanel');
+    if (!converter) return;
+
+    // Em telas muito pequenas a sidebar ocupa toda a largura (overlay) — não forçar recuo
+    if (window.innerWidth <= 480) {
+        converter.style.right = '0';
+        return;
+    }
+
+    if (!sidebar || sidebar.classList.contains('hidden')) {
+        // Quando sidebar está oculta, manter conversor em largura total
+        converter.style.right = '0';
+    } else {
+        // Ajusta o 'right' do painel de conversores para a largura atual da sidebar
+        const sidebarWidth = sidebar.offsetWidth || 350;
+        converter.style.right = sidebarWidth + 'px';
+    }
 }
 
 // Funções de exemplo

@@ -546,8 +546,8 @@ textarea.form-control {
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .sidebar {
-        width: 280px;
-        min-width: 280px;
+        width: 350px;
+        min-width: 350px;
     }
     
     .sidebar-floating-toggle {
