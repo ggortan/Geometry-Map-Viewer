@@ -1814,7 +1814,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <div class="modal-body">
                 <ul class="nav nav-tabs" id="addLayerTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="wkt-tab" data-bs-toggle="tab" data-bs-target="#wkt-tab-pane" type="button" role="tab">WKT</button>
+                        <button class="nav-link active" id="wkt-tab" data-bs-toggle="tab" data-bs-target="#wkt-tab-pane" type="button" role="tab">Dados</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="shapefile-tab" data-bs-toggle="tab" data-bs-target="#shapefile-tab-pane" type="button" role="tab">Shapefile</button>
